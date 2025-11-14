@@ -7,19 +7,35 @@ import hashlib
 import csv
 import os
 
-# Palabras hasheadas de la frase secreta (SHA-256)
-PALABRAS_HASH = [
-    "c9de7469861491b0a5865526a810e2d67d38f2d07fb0e0233e005d0bc0c27c71",
-    "9f659f42c3e99b8b1b541ad3e26c3cc951faa530c14dd165c63f798c5daf7f59",
-    "30e482b900616d26664b43f9db220db8810735508512c1e0e69f8ab2ba5f3451",
-    "1fcc42c3b6e667d5765aef81b8e41bbec9a7c6de59ca4c3f1e9e8dacc1c4a76e",
-    "30c47d0634ee3563dfcf0fb020b6a179e7bad29d3a96dfb41c8b1e2cf80e6900",
-    "e0490c214d5b4e8ca7ed7c3e1f8e30d19b7fe1b68b26e2f5d3e4c1f0a9b8c7d6"
+# Palabras encriptadas de la frase secreta (base64 + XOR)
+PALABRAS_ENCRIPTADAS = [
+    "T3Blbg==",
+    "dGhl",
+    "cG9k",
+    "YmF5",
+    "ZG9vcnMs",
+    "SGFs"
 ]
 
-def hash_palabra(palabra):
-    """Hashea una palabra usando SHA-256"""
-    return hashlib.sha256(palabra.encode()).hexdigest()
+# Clave de encriptación (no modificar)
+_KEY = 0x00
+
+def _xor_decode(encoded_str):
+    """Decodifica una cadena XOR + base64"""
+    import base64
+    decoded = base64.b64decode(encoded_str)
+    if _KEY == 0x00:
+        return decoded.decode('utf-8')
+    return ''.join(chr(byte ^ _KEY) for byte in decoded)
+
+def obtener_palabra_secreta(indice):
+    """Obtiene la palabra secreta correspondiente al índice si está disponible"""
+    if indice < len(PALABRAS_ENCRIPTADAS):
+        try:
+            return _xor_decode(PALABRAS_ENCRIPTADAS[indice])
+        except:
+            return "???"
+    return "???"
 
 def verificar_ejercicio1():
     """Verifica ejercicio 1: Análisis de números"""
@@ -167,7 +183,6 @@ def main():
     ]
     
     resultados = []
-    palabras_secretas = ["Open", "the", "pod", "bay", "doors,", "Hal"]
     frase_revelada = []
     
     for i, (nombre, verificador) in enumerate(ejercicios):
@@ -177,14 +192,15 @@ def main():
             
             if aprobado:
                 print(f"✓ {nombre}: APROBADO")
-                frase_revelada.append(palabras_secretas[i])
+                # Obtener palabra secreta hasheada
+                frase_revelada.append(obtener_palabra_secreta(i))
             else:
                 print(f"✗ {nombre}: FALLIDO")
-                frase_revelada.append("ERROR")
+                frase_revelada.append("???")
         except Exception as e:
             print(f"✗ {nombre}: ERROR - {e}")
             resultados.append(False)
-            frase_revelada.append("ERROR")
+            frase_revelada.append("???")
     
     print()
     print("=" * 60)
@@ -199,7 +215,7 @@ def main():
     print()
     
     if total_aprobados == 6:
-        print("Felicidades, has completado todos los ejercicios.")
+        print("🎉 ¡Felicidades! Has completado todos los ejercicios.")
         print("Has desbloqueado la frase secreta completa.")
     elif total_aprobados >= 4:
         print("¡Buen trabajo! Estás cerca de completar todos los ejercicios.")
